@@ -1,4 +1,6 @@
 import pandas as pd
+import math
+
 
 def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
     """
@@ -46,16 +48,35 @@ def IsPandasDataFrame(trains):
     return True
 
 
-def getJobCompanySize(trains, job_companies) -> pd.DataFrame:
-
+def getJobCompanySize(trains, job_companies: pd.DataFrame) -> pd.DataFrame:
     if not IsPandasDataFrame(trains):
         return None
     result = trains.copy()
 
     companySize = []
     for jobID in trains['jobID'].values:
-        companySize.append(job_companies[job_companies['jobID'] == jobID]['companySize'].values)
-    print(companySize)
+        companySize.append(job_companies[job_companies['jobID'] == jobID]['companySize'].values[0])
+
+    # 범주형 순서값은 전부 수치형 순서로 바꿔준다.
+    # 범주형 목록 - nan, 1-10, 11-50, 51-100, 101-200, 201-500, 501-1000, 1000 이상
+    # 수치형 목록 - 0, 1, 2, 3, 4, 5, 6, 7
+    for i in range(len(companySize)):
+        if type(companySize[i]) == type(float()):
+            companySize[i] = 0
+        elif '501-100' in companySize[i]:
+            companySize[i] = 6
+        elif '201-50' in companySize[i]:
+            companySize[i] = 5
+        elif '101-20' in companySize[i]:
+            companySize[i] = 4
+        elif '51-10' in companySize[i]:
+            companySize[i] = 3
+        elif '11-50' in companySize[i]:
+            companySize[i] = 2
+        elif '1-10' in companySize[i]:
+            companySize[i] = 1
+        else:
+            companySize[i] = 7
 
     result.loc[:, 'companySize'] = companySize
     return result
