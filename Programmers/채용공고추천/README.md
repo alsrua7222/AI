@@ -61,12 +61,83 @@ userID랑 jobID가 무엇을 구체적으로 알 필요가 있으므로 세부�
 이유는 해당 개발자가 어느 공고에 지원을 할까? 말까? 라는 예측을 하는 결과를 원하기 때문이다.      
 그러면 이진 분류기 모형 중에서 적합한 것은 모르니, 다 시도를 해보면서 정확률이 높은 모델이 무엇인지 알면 된다.        
 
+
+## 데이터 정형
 우선 데이터 정형할 필요가 있다.      
 `train.csv`를 열어서 지원한 이력들만 조회했더니, 857개가 있다.      
 한번 생각해보자, 이 과제의 최종 목표는 이 지원자가 해당 구인공고에 지원할까? 말까? 라는 예측으로 하는 것이므로,       
 지원자의 기술 스택과 요구하는 기술 스택이 점점 일치할 수록 지원할 가능성이 높다고 보면 된다.       
 즉, 지원자의 태그 아이디과 구인 공고의 태그 아이디들을 비교하면서 (일치한 개수) / (전체 개수)으로 퍼센트 비율을 구하면 되겠다.     
 
+```python
+def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
+    """
+    :param train: 학습 파일 데이터
+    :param tag: 태그 파일 데이터
+    :return pd.DataFrame: train데이터에 UserTagRatio 열을 추가한 pandas 객체 생성 및 반환.
+    :except param::train is not pandas class: None 반환.
+    """
+
+    if not IsPandasDataFrame(trains):
+        return None
+    # 반환할 객체에 train 데이터 복사.
+    result = trains.copy()
+
+    # 지원자가 가지고 있는 기술 스택 수집.
+    # 회사가 요구하는 기술 스택 수집.
+    # 수집하는 이유는 (시간 절약을 위해 HashMap 활용).
+    User_Tags = {}
+    for userID in trains['userID'].values:
+        User_Tags[userID] = set()
+        User_Tags[userID].update(user_tags[user_tags['userID'] == userID]['tagID'].values)
+    Job_Tags = {}
+    for jobID in trains['jobID'].values:
+        Job_Tags[jobID] = set()
+        Job_Tags[jobID].update(job_tags[job_tags['jobID'] == jobID]['tagID'].values)
+
+    # 1부터 끝까지 탐색하면서 비율 추가한다.
+    UserTagRatio = []
+    for userID, jobID, applied in trains.values:
+        count = 0
+        length = len(Job_Tags[jobID])
+        for tagID in Job_Tags[jobID]:
+            if tagID in User_Tags[userID]:
+                count += 1
+        UserTagRatio.append(count / length)
+
+    result.loc[:, 'UserTagRatio'] = UserTagRatio
+    return result
+```
+
+
 구체적으로 풀이를 쓰면, 회사가 요구하는 기술 스택 중에서 지원자의 기술 스택이 있다면 `일치한 개수`, `전체 개수` 두 변수를 1씩 증가시키고, 없다면 `전체 개수` 변수만 1씩 증가 시킨다.       
 즉, `userID`가 가지고 있는 `tagID`들을 `jobID`가 가지고 있는 `tagID`들을 매칭시켜보면서 해야 한다.      
 이렇게 비율을 완성 시킨 후 Pandas Dataframe 새로운 객체에 train 데이터과 새로운 열인 `UserTagRatio`를 추가한다.
+
+```python
+if not os.path.isfile(r"C:\Users\KMK\Desktop\train_job\train2.csv"):
+    trains = pd.read_csv(r"C:\Users\KMK\Desktop\train_job\train.csv")
+    tags = pd.read_csv(r"C:\Users\KMK\Desktop\train_job\tags.csv")
+    job_tags = pd.read_csv(r"C:\Users\KMK\Desktop\train_job\job_tags.csv")
+    user_tags = pd.read_csv(r"C:\Users\KMK\Desktop\train_job\user_tags.csv")
+    trains = getUserTagRatio(trains, job_tags, user_tags)
+    if trains is None:
+        print("getUserTagRatio return => None")
+        exit(0)
+    else:
+        trains.to_csv(r"C:\Users\KMK\Desktop\train_job\train2.csv", index=False, sep=',')
+else:
+    trains = pd.read_csv(r"C:\Users\KMK\Desktop\train_job\train2.csv")
+```
+
+같은 과정을 또 하고 싶지 않기에 파일을 저장해서 이 파일이 있다면 불러오기만 하면 되는 형식으로 하였다.
+
+그 다음, `job_companies.csv` 파일에 대해서 한번 생각해봐야 한다. 왜 회사의 규모라는 옵션 필드를 줬을까?       
+설마 회사 규모를 보고 지원하는 사람들? 나도 대기업에 자주 지원하는 심리상으로 맞는 것 같았다.      
+그래서 `jobID`로 매칭시킨 다음에 `companySize`를 반환하여 바인딩 해준다.      
+
+과연 회사의 규모에 따라 지원 횟수가 늘어나는지 검증해보겠다.      
+
+![image](./res/Figure_1.png)
+
+음 봐도 모르겠다. 특징적인 패턴을 안 보인다.      
