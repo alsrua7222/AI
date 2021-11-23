@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import seaborn
-
 from Data import *
 
 if not os.path.isfile(r"C:\Users\KMK\Desktop\train_job\train2.csv"):
@@ -36,5 +35,7 @@ else:
 # x축은 NaN, 1-10, 11-50, 51-100, 101-200 인지 체크해본다.
 # y축은 지원자의 기술스택이 회사가 요구하는 기술스택와 일치한비율을 나타낸다.
 
-seaborn.stripplot(x="companySize", y="UserTagRatio", hue="applied", data=trains)
+# seaborn.stripplot(x="companySize", y="UserTagRatio", hue="applied", data=trains)
+# 선형 회귀 분석 시도.
+seaborn.lmplot(x="companySize", y="UserTagRatio", hue="applied", data=trains)
 plt.show()
