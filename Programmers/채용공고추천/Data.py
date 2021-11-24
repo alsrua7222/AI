@@ -1,5 +1,15 @@
 import pandas as pd
-import math
+
+
+def IsPandasDataFrame(trains):
+    """
+    :param trains: 학습 파일 데이터
+    :return bool: Pandas DataFrame 객체 이면 True 아니라면 False
+    """
+    # trains type이 pandas 아니라면 컷트.
+    if type(trains) != type(pd.DataFrame()):
+        return False
+    return True
 
 
 def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
@@ -12,6 +22,7 @@ def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
 
     if not IsPandasDataFrame(trains):
         return None
+
     # 반환할 객체에 train 데이터 복사.
     result = trains.copy()
 
@@ -41,16 +52,16 @@ def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
     return result
 
 
-def IsPandasDataFrame(trains):
-    # trains type이 pandas 아니라면 컷트.
-    if type(trains) != type(pd.DataFrame()):
-        return False
-    return True
-
-
 def getJobCompanySize(trains, job_companies: pd.DataFrame) -> pd.DataFrame:
+    """
+    :param train: 학습 파일 데이터
+    :param tag: 회사규모 파일 데이터
+    :return pd.DataFrame: train데이터에 companySize 열을 추가한 pandas 객체 생성 및 반환.
+    :except param::train is not pandas class: None 반환.
+    """
     if not IsPandasDataFrame(trains):
         return None
+
     result = trains.copy()
 
     companySize = []
@@ -79,4 +90,25 @@ def getJobCompanySize(trains, job_companies: pd.DataFrame) -> pd.DataFrame:
             companySize[i] = 7
 
     result.loc[:, 'companySize'] = companySize
+    return result
+
+
+def getUserTagCounts(trains, user_tags) -> pd.DataFrame:
+    if not IsPandasDataFrame(trains):
+        return None
+
+    result = trains.copy()
+
+    # 유저 태그 수집하면서 기록.
+    UserTagCounts = []
+    User_Tags = {}
+    for userID in trains['userID'].values:
+        if userID not in User_Tags:
+            User_Tags[userID] = 0
+            tmp = set()
+            tmp.update(user_tags[user_tags['userID'] == userID]['tagID'].values)
+            User_Tags[userID] = len(tmp)
+        UserTagCounts.append(User_Tags[userID])
+
+    result.loc[:, 'UserTagCounts'] = UserTagCounts
     return result
