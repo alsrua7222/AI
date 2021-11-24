@@ -138,7 +138,7 @@ else:
 
 과연 회사의 규모에 따라 지원 횟수가 늘어나는지 검증해보겠다.      
 
-![image](./res/Figure_1.png)
+![image](./res/Figure_1.png)        
 
 음 봐도 모르겠다. 특징적인 패턴을 안 보인다.      
 그러면 범주형 x축 값을 전부 수치형 순서로 바꿔서 본다.
@@ -148,15 +148,66 @@ else:
 수치형 목록 - 0, 1, 2, 3, 4, 5, 6, 7
 ```
 
-![image](./res/Figure_2.png)
+![image](./res/Figure_2.png)        
 잘 보인다.
 뭐랑 연관되어 있는지 `y = ax + b` 꼴로 나타내면서 본다.       
 즉 선형회귀 모델이랑 적합한지 본다.        
 
-![image](./res/Figure_3.png)
+![image](./res/Figure_3.png)        
 
 회사 규모가 클수록 해당 공고에 지원한 선형회귀가 점점 떨어진다.        
 하지만 지원안한 선형회귀는 거의 유지되어 있다.      
-이러면 회사 규모에 따라 일치한 스택의 비율이 더 높다는 사실이 아님을 입증되었다.             
+이러면 회사 규모에 따라 지원자의 일치한 스택의 비율이 더 높다는 사실이 아님을 입증되었다.     
 
 어떻게 풀어야 할지 난감스럽다.       
+그러면 유저가 가지고 있는 스택의 개수에 따라서 다를까?를 한번 생각해보았다.     
+
+새로운 `UserTagCounts` 열을 추가한다. 계산식은 유저가 가지고 있는 모든 태그의 개수를 구하고 1번부터 끝까지 다 구해놓는다.       
+바인딩 해준다.        
+```python
+def getUserTagCounts(trains, user_tags) -> pd.DataFrame:
+    if not IsPandasDataFrame(trains):
+        return None
+
+    result = trains.copy()
+
+    # 유저 태그 수집하면서 기록.
+    UserTagCounts = []
+    User_Tags = {}
+    for userID in trains['userID'].values:
+        if userID not in User_Tags:
+            User_Tags[userID] = 0
+            tmp = set()
+            tmp.update(user_tags[user_tags['userID'] == userID]['tagID'].values)
+            User_Tags[userID] = len(tmp)
+        UserTagCounts.append(User_Tags[userID])
+
+    result.loc[:, 'UserTagCounts'] = UserTagCounts
+    return result
+```
+자 한번 출력해보자.
+
+```python
+seaborn.lmplot(y="UserTagRatio", x="UserTagCounts", hue="applied", data=trains)
+plt.show()
+```
+
+![image](./res/Figure_4.png)        
+
+옳거니! 지원자의 스펙이 높을수록 일치한 스펙의 비율이 높은 회사에 지원하는 경향이 더 커보이는 분석 결과가 나왔다.       
+그러면 지원자의 스펙 개수랑 일치한 스펙 비율와 회사 규모에 연관 관계가 있는지 한번 보자.     
+
+![image](./res/Figure_5.png)        
+
+음. 대체적으로 공고에 지원한 사람들의 선형 관계식이 지원안한 사람들의 선형 관계식보다 높다는 것을 알 수 있었다.        
+
+자 이제 학습을 시킬 때가 왔다.      
+
+---
+
+# ML
+일단 변수 관계 간을 보았을 때, 분류보다 회귀 쪽에 어울리는 것 같으니 한번 시도해본다.     
+회귀 쪽에 정확도가 분류 쪽의 정확도보다 낮으면 분류 문제는 역시 분류로 해야한다는 것을 공부할 것이다.      
+
+## 로지스틱 회귀
+
