@@ -40,7 +40,7 @@ def getUserTagRatio(trains, job_tags, user_tags) -> pd.DataFrame:
 
     # 1부터 끝까지 탐색하면서 비율 추가한다.
     UserTagRatio = []
-    for userID, jobID, applied in trains.values:
+    for userID, jobID in trains[["userID", "jobID"]].values:
         count = 0
         length = len(Job_Tags[jobID])
         for tagID in Job_Tags[jobID]:
