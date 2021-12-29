@@ -2,6 +2,10 @@
 Artificial Intelligence Study.
 
 # 역량 체크
+## 2021-12-29
+YOLO v3까지 실습 해 봄.   
+GAN 알고리즘을 배워 현재 백준 문제 중 인공지능 특화된 문제를 풀어보려고 함.   
+
 ## 2021-12-17
 CNN 신경망, 목적, 성능 측정, 모델, 최적화 기법 등 배움.    
 CNN C-P-C-P-C-FC-FC는 AlexNet.   
